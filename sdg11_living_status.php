@@ -1,31 +1,38 @@
 <?php
 /* ===========================
-   GET DATA
+   INPUT DATA
 =========================== */
-$city  = $_GET['city']  ?? "Unknown City";
+$city  = $_GET['city'] ?? "Unknown City";
 $score = intval($_GET['score'] ?? 0);
+
+/* ===========================
+   SENTINEL-2 NDVI (DERIVED)
+   Range: 0.2 – 0.8
+=========================== */
+$ndvi = round(mt_rand(30,70)/100,2); // simulated Sentinel-2 NDVI
+$greenCover = round($ndvi * 100);
 
 /* ===========================
    LIVING STATUS LOGIC
 =========================== */
 if ($score >= 80) {
     $status = "Excellent";
-    $msg = "The city provides high-quality housing, clean environment, good infrastructure, and sustainable urban development.";
+    $msg = "High-quality housing, strong infrastructure, low pollution, and sustainable urban development.";
     $color = "#16a34a";
 }
 elseif ($score >= 60) {
     $status = "Good";
-    $msg = "The city has acceptable living conditions with moderate environmental sustainability and infrastructure.";
+    $msg = "Acceptable living conditions with moderate environmental sustainability.";
     $color = "#22c55e";
 }
 elseif ($score >= 40) {
     $status = "Moderate";
-    $msg = "The city requires improvement in housing quality, pollution control, and basic urban facilities.";
+    $msg = "Improvement needed in green cover, pollution control, and infrastructure.";
     $color = "#f59e0b";
 }
 else {
     $status = "Poor";
-    $msg = "The city faces serious challenges in urban sustainability, infrastructure, and living standards.";
+    $msg = "Critical challenges in urban sustainability and human living conditions.";
     $color = "#dc2626";
 }
 ?>
@@ -33,8 +40,10 @@ else {
 <!DOCTYPE html>
 <html>
 <head>
-<title><?= $city ?> – Human Living Status (SDG-11)</title>
+<title><?= $city ?> – SDG-11 Human Living Status</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body{
@@ -43,30 +52,30 @@ body{
     background:linear-gradient(135deg,#E0F2FE,#DBEAFE);
 }
 .container{
-    max-width:700px;
-    margin:120px auto;
+    max-width:800px;
+    margin:80px auto;
     background:white;
     padding:50px;
     border-radius:30px;
-    box-shadow:0 15px 40px rgba(0,0,0,0.15);
+    box-shadow:0 15px 40px rgba(0,0,0,.15);
     text-align:center;
 }
-h1{
-    margin-bottom:10px;
-}
 .status{
-    font-size:2.6rem;
+    font-size:2.5rem;
     font-weight:900;
     color:<?= $color ?>;
-    margin:20px 0;
 }
 .score{
-    font-size:1.3rem;
-    margin-bottom:20px;
+    margin:15px 0;
+    font-size:1.2rem;
 }
-p{
-    font-size:1.15rem;
-    line-height:1.7;
+.ndvi{
+    margin-top:25px;
+    font-size:1.2rem;
+    font-weight:700;
+}
+canvas{
+    margin-top:30px;
 }
 a{
     display:inline-block;
@@ -78,6 +87,14 @@ a{
     border-radius:30px;
     font-weight:700;
 }
+.flash{
+    animation:flash 1.5s infinite;
+}
+@keyframes flash{
+    0%{opacity:1}
+    50%{opacity:.4}
+    100%{opacity:1}
+}
 </style>
 </head>
 
@@ -85,12 +102,58 @@ a{
 
 <div class="container">
     <h1>🏙 <?= $city ?></h1>
+
     <div class="status"><?= $status ?></div>
+
     <div class="score">SDG-11 Score: <b><?= $score ?>/100</b></div>
+
     <p><?= $msg ?></p>
+
+    <div class="ndvi flash">
+        🌳 Sentinel-2 NDVI (Green Cover – 10% Weight):  
+        <b><?= $greenCover ?>%</b>
+    </div>
+
+    <!-- GRAPH -->
+    <canvas id="ndviChart" height="120"></canvas>
 
     <a href="index.php?city=<?= urlencode($city) ?>">⬅ Back to Dashboard</a>
 </div>
+
+<script>
+/* REAL-TIME GRAPH (FLASH MODE) */
+const ctx = document.getElementById('ndviChart').getContext('2d');
+
+const ndviChart = new Chart(ctx,{
+    type:'bar',
+    data:{
+        labels:['Green Cover (NDVI)'],
+        datasets:[{
+            label:'NDVI %',
+            data:[<?= $greenCover ?>],
+            backgroundColor:'#16a34a'
+        }]
+    },
+    options:{
+        animation:{
+            duration:1200
+        },
+        scales:{
+            y:{
+                min:0,
+                max:100
+            }
+        }
+    }
+});
+
+/* AUTO UPDATE (SIMULATED REAL-TIME) */
+setInterval(()=>{
+    let val = Math.floor(Math.random()*20)+40;
+    ndviChart.data.datasets[0].data[0]=val;
+    ndviChart.update();
+},3000);
+</script>
 
 </body>
 </html>
